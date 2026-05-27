@@ -29,7 +29,7 @@ public class CartServiceImpl implements  CartService{
     ModelMapper modelMapper;
 
     @Autowired
-    AuthUtil authUtil;
+    AuthUtil authUtils;
 
     @Autowired
     private CartItemRepository cartItemRepository;
