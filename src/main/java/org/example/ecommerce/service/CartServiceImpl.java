@@ -10,11 +10,13 @@ import org.example.ecommerce.payload.ProductDTO;
 import org.example.ecommerce.repositories.CartItemRepository;
 import org.example.ecommerce.repositories.CartRepository;
 import org.example.ecommerce.repositories.ProductRepository;
+import org.example.ecommerce.util.AuthUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -78,6 +80,22 @@ public class CartServiceImpl implements  CartService{
         cartDtO.setProducts(productDTOStream.toList());
         return cartDtO ;
     }
+
+    @Override
+    public List<CartDTO> getAllCarts() {
+        List<Cart> carts = cartRepository.findAll();
+        if(carts.size() == 0)throw new APIException("No cart exist");
+        List<CartDTO> cartDTOS = carts.stream()
+                .map(cart ->{
+                    CartDTO cartDTO = modelMapper.map(cart,CartDTO.class);
+                    List<ProductDTO> products = cart.getCartItems().stream().map(p -> modelMapper.map(p.getProduct(), ProductDTO.class))
+                            .collect(Collectors.toList());
+                    cartDTO.setProducts(products);
+                    return cartDTO;
+                }).collect(Collectors.toList());
+        return cartDTOS;
+    }
+
     private Cart createCart(){
          Cart userCart = cartRepository.findCartByEmail(authUtil.loggedInEmail());
          if(userCart != null)return userCart;
