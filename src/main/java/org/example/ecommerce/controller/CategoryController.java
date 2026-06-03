@@ -1,10 +1,14 @@
 package org.example.ecommerce.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.apache.coyote.Response;
 import org.example.ecommerce.config.AppConstants;
 import org.example.ecommerce.model.Category;
+import org.example.ecommerce.payload.CartDTO;
 import org.example.ecommerce.payload.CategoryDTO;
 import org.example.ecommerce.payload.CategoryResponse;
+import org.example.ecommerce.service.CartService;
 import org.example.ecommerce.service.CategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +21,12 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final CartService cartService;
 
     // Constructor Injection (Best Practice)
-    public CategoryController(CategoryService categoryService) {
+    public CategoryController(CategoryService categoryService, CartService cartService) {
         this.categoryService = categoryService;
+        this.cartService = cartService;
     }
 
     // GET all categories
@@ -63,5 +69,11 @@ public class CategoryController {
     public ResponseEntity<CategoryDTO> deleteCategory(@PathVariable Long categoryId) {
         CategoryDTO status = categoryService.deleteCategory(categoryId);
         return ResponseEntity.ok(status);
+    }
+
+    @PutMapping("/carts/products/{productId}/quantity/{operation}")
+    public ResponseEntity<CartDTO> updateCartProduct(@PathVariable Long productId,@PathVariable String operation){
+         CartDTO cartDTO = cartService.updateProductQuantityInCart(productId, operation.equalsIgnoreCase("delete")?-1:1);
+         return new ResponseEntity<CartDTO>(cartDTO, HttpStatus.OK);
     }
 }

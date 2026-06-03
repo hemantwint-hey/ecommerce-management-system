@@ -1,5 +1,6 @@
 package org.example.ecommerce.service;
 
+import jakarta.transaction.Transactional;
 import org.example.ecommerce.exceptions.APIException;
 import org.example.ecommerce.exceptions.ResourceNotFoundException;
 import org.example.ecommerce.model.Cart;
@@ -107,6 +108,12 @@ public class CartServiceImpl implements  CartService{
                 .toList();
         cartDTO.setProducts(products);
         return cartDTO;
+    }
+
+    @Override
+    @Transactional
+    public CartDTO updateProductQuantityInCart(Long productId, int delete) {
+        return null;
     }
 
     private Cart createCart(){
