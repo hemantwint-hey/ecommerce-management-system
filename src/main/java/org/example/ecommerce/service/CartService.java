@@ -1,5 +1,6 @@
 package org.example.ecommerce.service;
 
+import jakarta.transaction.Transactional;
 import org.example.ecommerce.payload.CartDTO;
 import org.springframework.stereotype.Service;
 
@@ -13,5 +14,6 @@ public interface CartService {
 
     CartDTO getCart(String emailID, Long cartId);
 
-    CartDTO updateProductQuantityInCart(Long productId, int delete);
+    @Transactional
+    CartDTO updateProductQuantityInCart(Long productId, Integer quantity);
 }

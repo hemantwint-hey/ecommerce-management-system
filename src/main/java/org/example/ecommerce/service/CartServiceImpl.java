@@ -109,10 +109,26 @@ public class CartServiceImpl implements  CartService{
         cartDTO.setProducts(products);
         return cartDTO;
     }
-
-    @Override
     @Transactional
-    public CartDTO updateProductQuantityInCart(Long productId, int delete) {
+    @Override
+    public CartDTO updateProductQuantityInCart(Long productId, Integer quantity ) {
+        String emailId = authUtil.loggedInEmail();
+        Cart userCart = cartRepository.findCartByEmail(emailId);
+        Long cartId = userCart.getCartId();
+        Cart cart = cartRepository.findById(cartId).orElseThrow(()-> new ResourceNotFoundException("Cart","cartId",cartId));
+        Product product  = productRepository.findById(productId).orElseThrow(()-> new ResourceNotFoundException("Product","productId",productId));
+
+        if( product.getQuantity() == 0)throw  new APIException(product.getProductName() + "is not available");
+
+        if( product.getQuantity() < quantity )throw  new APIException("Please, make an order of the " + product.getProductName() + " less than or equal to the quantity"
+                + product.getQuantity()+".");
+        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cartId, productId);
+        if(cartItem == null)throw new APIException("Product" + product.getProductName());
+
+        cartItem.setProductPrice(product.getSpecialPrice());
+        cartItem.setQuantity(cartItem.getQuantity()+quantity);
+        cartItem.setDiscount(product.getDiscount());
+        cartt.set
         return null;
     }
 
