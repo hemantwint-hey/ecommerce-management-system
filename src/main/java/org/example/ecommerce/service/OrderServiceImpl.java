@@ -51,6 +51,18 @@ public class OrderServiceImpl implements OrderService {
         }
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address","AddressId",addressId));
+        if (!address.getUser().getEmail().equals(emailId)) {
+            throw new ResourceNotFoundException("Address", "AddressId", addressId);
+        }
+        List<CartItem> cartItems = new ArrayList<>(cart.getCartItems());
+        if(cartItems.isEmpty()){
+            throw new APIException("Cart is Empty");
+        }
+        cartItems.forEach(item -> {
+            if (item.getProduct().getQuantity() < item.getQuantity()) {
+                throw new APIException("Insufficient stock for product " + item.getProduct().getProductName());
+            }
+        });
         // create a new order with the payment info
 
         Order order = new Order();
@@ -66,10 +78,6 @@ public class OrderServiceImpl implements OrderService {
         order.setPayment(payment);
 
         Order savedOrder = orderRepository.save(order);
-        List<CartItem> cartItems = cart.getCartItems();
-        if(cartItems.isEmpty()){
-            throw new APIException("Cart is Empty");
-        }
         List<OrderItem> orderItems = new ArrayList<>();
         for(CartItem cartItem : cartItems){
             OrderItem orderItem = new OrderItem();
@@ -84,7 +92,7 @@ public class OrderServiceImpl implements OrderService {
        orderItems =  orderItemRepository.saveAll(orderItems);
 
         // update product stock
-        cart.getCartItems().forEach(item -> {
+        cartItems.forEach(item -> {
             int quantity = item.getQuantity();
             Product product = item.getProduct();
             product.setQuantity(product.getQuantity() - quantity);

@@ -35,7 +35,7 @@ public class CategoryController {
 
     // CREATE category
     @PostMapping(
-            value = "/public/categories",
+            value = "/admin/categories",
             consumes = "application/json"
     )
     public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
@@ -45,7 +45,7 @@ public class CategoryController {
 
     // UPDATE category
     @PutMapping(
-            value = "/public/categories/{categoryId}",
+            value = "/admin/categories/{categoryId}",
             consumes = "application/json"
     )
     public ResponseEntity<CategoryDTO> updateCategory(

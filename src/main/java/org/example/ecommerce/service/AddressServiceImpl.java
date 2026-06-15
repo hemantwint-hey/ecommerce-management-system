@@ -6,6 +6,7 @@ import org.example.ecommerce.model.User;
 import org.example.ecommerce.payload.AddressDTO;
 import org.example.ecommerce.repositories.AddressRepository;
 import org.example.ecommerce.repositories.UserRepository;
+import org.example.ecommerce.util.AuthUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,9 @@ public class AddressServiceImpl implements AddressService {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    private AuthUtil authUtil;
 
 
 
@@ -52,6 +56,7 @@ public class AddressServiceImpl implements AddressService {
     public AddressDTO getAddressesById(Long addressId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address","addressId",addressId));
+        verifyOwnership(address);
         return modelMapper.map(address,AddressDTO.class);
     }
 
@@ -67,13 +72,14 @@ public class AddressServiceImpl implements AddressService {
     public AddressDTO updateAddress(Long addressId, AddressDTO addressDTO) {
         Address addressFromDatabase = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address","addressId",addressId));
+        verifyOwnership(addressFromDatabase);
 
         addressFromDatabase.setCity(addressDTO.getCity());
-        addressFromDatabase.setCity(addressDTO.getPincode());
-        addressFromDatabase.setCity(addressDTO.getState());
-        addressFromDatabase.setCity(addressDTO.getCountry());
-        addressFromDatabase.setCity(addressDTO.getStreet());
-        addressFromDatabase.setCity(addressDTO.getBuildingName());
+        addressFromDatabase.setPincode(addressDTO.getPincode());
+        addressFromDatabase.setState(addressDTO.getState());
+        addressFromDatabase.setCountry(addressDTO.getCountry());
+        addressFromDatabase.setStreet(addressDTO.getStreet());
+        addressFromDatabase.setBuildingName(addressDTO.getBuildingName());
 
         Address updatedAddress = addressRepository.save(addressFromDatabase);
         User user = addressFromDatabase.getUser();
@@ -88,10 +94,17 @@ public class AddressServiceImpl implements AddressService {
     public String deleteAddress(Long addressId) {
         Address addressFromDatabase = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address","addressId",addressId));
+        verifyOwnership(addressFromDatabase);
         User user = addressFromDatabase.getUser();
         user.getAddresses().removeIf(address -> address.getAddressId().equals(addressId));
         userRepository.save(user);
         addressRepository.delete(addressFromDatabase);
         return "Address deleted successfully with addressId"+addressId;
+    }
+
+    private void verifyOwnership(Address address) {
+        if (!address.getUser().getUserId().equals(authUtil.loggedInUserId())) {
+            throw new ResourceNotFoundException("Address", "addressId", address.getAddressId());
+        }
     }
 }

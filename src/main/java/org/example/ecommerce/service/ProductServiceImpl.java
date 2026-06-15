@@ -112,7 +112,7 @@ public class ProductServiceImpl implements  ProductService {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
                 ?Sort.by(sortBy).ascending():Sort.by(sortBy).descending();
         Pageable pageDetails = PageRequest.of(pageNumber , pageSize , sortByAndOrder);
-        Page<Product> pageProducts = productRepository.findByCategoryOrderByPriceAsc(category,pageDetails);
+        Page<Product> pageProducts = productRepository.findByCategory(category,pageDetails);
         // products size is 0 or not
         List<Product> products=pageProducts.getContent();
 

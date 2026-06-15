@@ -31,7 +31,7 @@ public class CartController {
             return new ResponseEntity<CartDTO>(cartDTO, HttpStatus.CREATED);
     }
 
-    @GetMapping("/carts")
+    @GetMapping("/admin/carts")
     public ResponseEntity<List<CartDTO>> getCarts(){
         List<CartDTO> cartDTOS = cartService.getAllCarts();
         return new ResponseEntity<List<CartDTO>>(cartDTOS, HttpStatus.FOUND);
@@ -54,6 +54,10 @@ public class CartController {
     }
     @DeleteMapping("/carts/{cartId}/products/{productId}")
     public ResponseEntity<String> deleteProductFromCart(@PathVariable Long cartId, @PathVariable Long productId){
+        String email = authUtil.loggedInEmail();
+        if (cartRepository.findCartByEmailAndCartId(email, cartId) == null) {
+            throw new ResourceNotFoundException("Cart", "cartId", cartId);
+        }
         String status = cartService.deleteProductFromCart(cartId,productId);
         return new ResponseEntity<>(status, HttpStatus.OK);
     }

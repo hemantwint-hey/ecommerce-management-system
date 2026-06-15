@@ -54,7 +54,7 @@ public class ProductController {
                                                                 @RequestParam(name="sortOrder", defaultValue = AppConstants.SORT_DIR , required = false) String sortOrder
     ){
        ProductResponse productResponse= productService.searchProductByKeyword(keyword,pageNumber,pageSize,sortBy,sortOrder);
-        return new ResponseEntity<>(productResponse,HttpStatus.FOUND);
+        return new ResponseEntity<>(productResponse,HttpStatus.OK);
     }
     @PutMapping("/admin/product/{productId}")
     public ResponseEntity<ProductDTO> updateProduct(@Valid @RequestBody ProductDTO productDTO,@PathVariable Long productId){
@@ -66,7 +66,7 @@ public class ProductController {
         ProductDTO deletedProduct=productService.deleteProduct(productId);
         return new ResponseEntity<>(deletedProduct,HttpStatus.OK);
     }
-    @PutMapping("/products/{productId}/image")
+    @PutMapping("/admin/products/{productId}/image")
     public ResponseEntity<ProductDTO> updateProductImage(@PathVariable Long productId, @RequestParam("image") MultipartFile image) throws IOException {
         ProductDTO updatedProduct = productService.updateProductImage(productId,image);
         return new ResponseEntity<>(updatedProduct,HttpStatus.OK);

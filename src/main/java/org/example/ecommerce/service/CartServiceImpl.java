@@ -39,6 +39,9 @@ public class CartServiceImpl implements  CartService{
 
     @Override
     public CartDTO addProductToCart(Long productId, Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new APIException("Product quantity must be greater than zero");
+        }
         // find the existing cart or create one
         Cart cart = createCart();
         // retrieve product details
@@ -121,11 +124,11 @@ public class CartServiceImpl implements  CartService{
 
         if( product.getQuantity() == 0)throw  new APIException(product.getProductName() + "is not available");
 
-        if( product.getQuantity() < quantity )throw  new APIException("Please, make an order of the " + product.getProductName() + " less than or equal to the quantity"
-                + product.getQuantity()+".");
         CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cartId, productId);
         if(cartItem == null)throw new APIException("Product" + product.getProductName());
         if(cartItem.getQuantity() + quantity < 0)throw new APIException("Product quantity cannot be less than zero");
+        if(product.getQuantity() < cartItem.getQuantity() + quantity)throw new APIException("Please, make an order of the " + product.getProductName() + " less than or equal to the quantity"
+                + product.getQuantity()+".");
 
         cartItem.setProductPrice(product.getSpecialPrice());
         cartItem.setQuantity(cartItem.getQuantity()+quantity);
