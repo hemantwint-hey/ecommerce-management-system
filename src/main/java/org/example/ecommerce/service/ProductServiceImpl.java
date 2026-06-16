@@ -40,7 +40,7 @@ public class ProductServiceImpl implements  ProductService {
     @Autowired
     private FileService fileService;
 
-    @Value("${project.image}")
+    @Value("${project.image:images/}")
     private String path;
     @Autowired
     private CartRepository cartRepository;

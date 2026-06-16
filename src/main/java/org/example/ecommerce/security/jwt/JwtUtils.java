@@ -17,7 +17,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.util.WebUtils;
 
 import javax.crypto.SecretKey;
@@ -26,12 +25,12 @@ import java.util.Date;
 @Component
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
-    @Value("${spring.app.jwtExpirationMs}")
+    @Value("${spring.app.jwtExpirationMs:86400000}")
     private int jwtExpirationMs;
-    @Value("${spring.app.jwtSecret}")
+    @Value("${spring.app.jwtSecret:ZGV2LWp3dC1zZWNyZXQta2V5LWZvci1sb2NhbC11c2Utb25seS0xMjM0NTY3ODkw}")
     private String jwtSecret;
 
-    @Value("${spring.app.jwtCookieName}")
+    @Value("${spring.app.jwtCookieName:springBootEcom}")
     private String jwtCookie;
 
     public String getJwtFromCookies(HttpServletRequest request){
