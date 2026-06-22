@@ -4,7 +4,6 @@ E-Commerce Backend Application is a RESTful API built using Java, Spring Boot, S
 
 UML Architecture Diagram
 
-Paste this Mermaid code into README.md:
 
 ```mermaid
 flowchart TD
@@ -87,7 +86,6 @@ flowchart TD
 ```
 Entity Relationship UML
 
-This one will impress recruiters more:
 
 ```mermaid
 classDiagram
