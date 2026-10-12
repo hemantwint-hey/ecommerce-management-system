@@ -1,5 +1,7 @@
 package org.example.ecommerce.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.example.ecommerce.exceptions.APIException;
 import org.example.ecommerce.exceptions.ResourceNotFoundException;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -45,6 +48,9 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private StripeService stripeService;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public static final String PAYMENT_COD = "CASH_ON_DELIVERY";
     public static final String PAYMENT_STRIPE = "STRIPE";
 
@@ -59,6 +65,28 @@ public class OrderServiceImpl implements OrderService {
         return stripeService.createPaymentIntent(emailId, cart.getTotalPrice());
     }
 
+    /**
+     * The stock check and decrement happen atomically in the database (ProductRepository.decrementStock),
+     * so two buyers can't both take the last unit, even across several app instances.
+     * Products are locked in ascending id order so two multi-item orders can never deadlock each other.
+     */
+    private void reserveStock(List<CartItem> cartItems) {
+        List<CartItem> byProductId = cartItems.stream()
+                .sorted(Comparator.comparing(item -> item.getProduct().getProductId()))
+                .toList();
+        for (CartItem item : byProductId) {
+            Product product = item.getProduct();
+            int updated = productRepository.decrementStock(product.getProductId(), item.getQuantity());
+            if (updated == 0) {
+                throw new APIException("Insufficient stock for product " + product.getProductName());
+            }
+            // The bulk UPDATE bypassed Hibernate, so reload the row; otherwise the stale in-memory
+            // quantity could be flushed back over the new value.
+            entityManager.refresh(product);
+        }
+    }
+
+    /** Early, friendly validation. Not a guarantee: the stock can change right after this read. */
     private List<CartItem> validateCartForCheckout(Cart cart) {
         List<CartItem> cartItems = new ArrayList<>(cart.getCartItems());
         if (cartItems.isEmpty()) {
@@ -107,6 +135,9 @@ public class OrderServiceImpl implements OrderService {
 
         Payment payment = buildVerifiedPayment(emailId, cart, paymentMethod, pgPaymentId);
 
+        // Reserve stock before writing anything else. Any failure here throws and rolls back the whole order.
+        reserveStock(cartItems);
+
         // create a new order with the payment info
         Order order = new Order();
         order.setEmail(emailId);
@@ -132,15 +163,9 @@ public class OrderServiceImpl implements OrderService {
 
        orderItems =  orderItemRepository.saveAll(orderItems);
 
-        // update product stock
-        cartItems.forEach(item -> {
-            int quantity = item.getQuantity();
-            Product product = item.getProduct();
-            product.setQuantity(product.getQuantity() - quantity);
-            productRepository.save(product);
-            // clear the cart
-            cartService.deleteProductFromCart(cart.getCartId(),item.getProduct().getProductId());
-        });
+        // clear the cart (stock was already reserved by reserveStock)
+        cartItems.forEach(item ->
+                cartService.deleteProductFromCart(cart.getCartId(), item.getProduct().getProductId()));
 
         // send back the order summary
         OrderDTO orderDTO = modelMapper.map(savedOrder, OrderDTO.class);
