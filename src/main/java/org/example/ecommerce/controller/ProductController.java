@@ -25,6 +25,11 @@ public class ProductController {
         ProductDTO savedProductDTO= productService.addProduct(categoryId,productDTO);
         return new ResponseEntity<>(savedProductDTO, HttpStatus.CREATED);
     }
+    @GetMapping("/public/products/{productId}")
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long productId){
+        return new ResponseEntity<>(productService.getProductById(productId), HttpStatus.OK);
+    }
+
     @GetMapping("/public/products")
     public ResponseEntity<ProductResponse> getAllProducts(
             @RequestParam(name ="pageNumber", defaultValue= AppConstants.PAGE_NUMBER,required = false) Integer pageNumber,

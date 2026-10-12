@@ -40,4 +40,10 @@ public class AuthUtil {
                         new RuntimeException("User not found with email: " + authentication));
         return user;
     }
+
+    public boolean isCurrentUserAdmin(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+    }
 }

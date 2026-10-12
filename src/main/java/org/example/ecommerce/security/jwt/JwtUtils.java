@@ -33,6 +33,12 @@ public class JwtUtils {
     @Value("${spring.app.jwtCookieName:springBootEcom}")
     private String jwtCookie;
 
+    @Value("${spring.app.jwtCookieSecure:false}")
+    private boolean jwtCookieSecure;
+
+    @Value("${spring.app.jwtCookieSameSite:Lax}")
+    private String jwtCookieSameSite;
+
     public String getJwtFromCookies(HttpServletRequest request){
         Cookie cookie = WebUtils.getCookie(request,jwtCookie);
         if (cookie != null){
@@ -58,6 +64,8 @@ public class JwtUtils {
                 .path("/api")
                 .maxAge(24*60*60)
                 .httpOnly(true)
+                .secure(jwtCookieSecure)
+                .sameSite(jwtCookieSameSite)
                 .build();
         return cookie;
     }
@@ -65,6 +73,10 @@ public class JwtUtils {
     public ResponseCookie getCleanJwtCookie(){
         ResponseCookie cookie = ResponseCookie.from(jwtCookie, null)
                 .path("/api")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(jwtCookieSecure)
+                .sameSite(jwtCookieSameSite)
                 .build();
         return cookie;
     }

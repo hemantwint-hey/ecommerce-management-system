@@ -11,6 +11,7 @@ import org.example.ecommerce.payload.ProductResponse;
 import org.example.ecommerce.repositories.CartRepository;
 import org.example.ecommerce.repositories.CategoryRepository;
 import org.example.ecommerce.repositories.ProductRepository;
+import org.example.ecommerce.util.AuthUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,8 @@ public class ProductServiceImpl implements  ProductService {
     private CartRepository cartRepository;
     @Autowired
     private CartService cartService;
+    @Autowired
+    private AuthUtil authUtil;
 
     public ProductDTO addProduct(Long categoryId,ProductDTO productDTO){
         Category category = categoryRepository.findById(categoryId)
@@ -65,6 +68,8 @@ public class ProductServiceImpl implements  ProductService {
             Product product =modelMapper.map(productDTO,Product.class);
             product.setImage("default.png");
             product.setCategory(category);
+            // Whoever creates the product (a seller or an admin) owns it.
+            product.setUser(authUtil.loggedInUser());
             double specialPrice= product.getPrice()-(product.getDiscount() * 0.01)* product.getPrice();
             product.setSpecialPrice(specialPrice);
             Product savedProduct = productRepository.save(product);
@@ -74,6 +79,13 @@ public class ProductServiceImpl implements  ProductService {
             throw new APIException("Product already exist");
         }
 
+    }
+
+    @Override
+    public ProductDTO getProductById(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+        return modelMapper.map(product, ProductDTO.class);
     }
 
     @Override
@@ -207,4 +219,30 @@ public class ProductServiceImpl implements  ProductService {
 
 
 
+
+    @Override
+    public ProductResponse getProductsBySeller(Long sellerId, Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+                ?Sort.by(sortBy).ascending():Sort.by(sortBy).descending();
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
+        Page<Product> pageProducts = productRepository.findByUser_UserId(sellerId, pageDetails);
+        List<ProductDTO> productDTOS = pageProducts.getContent().stream()
+                .map(product -> modelMapper.map(product, ProductDTO.class))
+                .toList();
+        return new ProductResponse(productDTOS, pageProducts.getNumber(), pageProducts.getSize(),
+                pageProducts.getTotalElements(), pageProducts.getTotalPages(), pageProducts.isLast());
+    }
+
+    @Override
+    public void verifyProductOwnership(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+        if (authUtil.isCurrentUserAdmin()) {
+            return;
+        }
+        // Answer 404 rather than 403 so sellers cannot probe which product ids exist.
+        if (product.getUser() == null || !product.getUser().getUserId().equals(authUtil.loggedInUserId())) {
+            throw new ResourceNotFoundException("Product", "productId", productId);
+        }
+    }
 }

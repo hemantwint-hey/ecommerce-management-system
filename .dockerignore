@@ -1,0 +1,8 @@
+target
+frontend
+doc
+images
+.idea
+.vscode
+*.pdf
+*.py

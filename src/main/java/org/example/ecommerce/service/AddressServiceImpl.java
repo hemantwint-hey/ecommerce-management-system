@@ -56,7 +56,11 @@ public class AddressServiceImpl implements AddressService {
     public AddressDTO getAddressesById(Long addressId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address","addressId",addressId));
-        verifyOwnership(address);
+        // Admins may look up any address read-only (e.g. to show shipping details on an order);
+        // they still cannot modify or delete another user's address (see verifyOwnership below).
+        if (!authUtil.isCurrentUserAdmin()) {
+            verifyOwnership(address);
+        }
         return modelMapper.map(address,AddressDTO.class);
     }
 
